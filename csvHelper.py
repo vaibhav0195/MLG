@@ -57,11 +57,33 @@ class CSVHelper:
             self.doTrainTestSplit(testSize)
             return self.dataDirectory
 
+    def updateHostSince(self):
+        dateDfOld = pd.to_datetime(self._dataFrame["host_since"], infer_datetime_format=True)
+        currentDateTime = pd.to_datetime("now")
+        diffDays = currentDateTime - dateDfOld
+        diffDays = diffDays / np.timedelta64(1, 'D')
+        self._dataFrame["host_since"] = diffDays
+
+    def updateTrueFalseColumns(self,columnName):
+        dataFrame = self._dataFrame[columnName].fillna('f') # fill the nan values with False values
+        trueFalseDictionary = {'t':1 ,'f':0}
+        # dataFrame.map({'t':1 ,'f':0})
+        self._dataFrame[columnName] = dataFrame.apply(lambda x: trueFalseDictionary[x])
+
+    def changePercentageToInt(self,columnName):
+        dataFrame = self._dataFrame[columnName].fillna('00%')  # fill the nan values with 0 percent values values
+        self._dataFrame[columnName] = dataFrame.apply(lambda x: int(float(x.split("%")[0])))
+        pass
 if __name__ == '__main__':
     csvPath = "dataset/listings.csv"
     csvObj = CSVHelper(csvPath,["host_since","host_response_time","host_response_rate"
         ,"host_acceptance_rate","host_verifications","host_has_profile_pic","host_identity_verified","amenities",
         "review_scores_cleanliness","review_scores_checkin","review_scores_communication","review_scores_location",
                                 "review_scores_value","license"],"host_is_superhost")
+    csvObj.updateHostSince()
+    csvObj.updateTrueFalseColumns("host_has_profile_pic")
+    csvObj.updateTrueFalseColumns("host_identity_verified")
+    csvObj.changePercentageToInt("host_response_rate")
+    csvObj.changePercentageToInt("host_acceptance_rate")
     dataDictionary = csvObj.getTrainTestData(0.1)
     pass
