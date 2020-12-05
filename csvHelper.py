@@ -74,16 +74,35 @@ class CSVHelper:
         dataFrame = self._dataFrame[columnName].fillna('00%')  # fill the nan values with 0 percent values values
         self._dataFrame[columnName] = dataFrame.apply(lambda x: int(float(x.split("%")[0])))
         pass
+
+    def changeListToLength(self,columnName):
+        dataFrame = self._dataFrame[columnName].fillna("")
+        self._dataFrame[columnName] = dataFrame.apply(lambda x: len(x))
+
+    def convertResponseTime(self):
+        convertDict = {
+            "a few days or more":0,
+            "within an hour":1,
+            "within a few hours":2,
+            "within a day":3,
+            " ":4
+        }
+        dataFrame = self._dataFrame['host_response_time'].fillna(" ")
+        self._dataFrame["host_response_time"] = dataFrame.apply(lambda x:int(convertDict[x]))
+
 if __name__ == '__main__':
     csvPath = "dataset/listings.csv"
     csvObj = CSVHelper(csvPath,["host_since","host_response_time","host_response_rate"
         ,"host_acceptance_rate","host_verifications","host_has_profile_pic","host_identity_verified","amenities",
         "review_scores_cleanliness","review_scores_checkin","review_scores_communication","review_scores_location",
-                                "review_scores_value","license"],"host_is_superhost")
+                                "review_scores_value"],"host_is_superhost")
     csvObj.updateHostSince()
     csvObj.updateTrueFalseColumns("host_has_profile_pic")
     csvObj.updateTrueFalseColumns("host_identity_verified")
     csvObj.changePercentageToInt("host_response_rate")
     csvObj.changePercentageToInt("host_acceptance_rate")
+    csvObj.changeListToLength("amenities")
+    csvObj.changeListToLength("host_verifications")
+    csvObj.convertResponseTime()
     dataDictionary = csvObj.getTrainTestData(0.1)
     pass
