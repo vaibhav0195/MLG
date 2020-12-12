@@ -57,8 +57,8 @@ class CSVHelper:
         else:
             falseDataPoints = trueDataPoints[:trueCount]
         # make new gT
-        yTrue = np.asarray(['t' for _ in range(trueDataPoints.shape[0])])
-        yFalse = np.asarray(['f' for _ in range(trueDataPoints.shape[0])])
+        yTrue = np.asarray([1 for _ in range(trueDataPoints.shape[0])])
+        yFalse = np.asarray([0 for _ in range(trueDataPoints.shape[0])])
         # return value
         return np.concatenate((trueDataPoints, falseDataPoints), axis=0),np.concatenate((yTrue,yFalse), axis=0)
 
@@ -127,6 +127,26 @@ class CSVHelper:
         dataFrame = self._dataFrame[columnName].fillna(defaultValue)
         self._dataFrame[columnName] = dataFrame
 
+    def normaliseData(self):
+        self.updateHostSince()
+        self.updateTrueFalseColumns("host_has_profile_pic")
+        self.updateTrueFalseColumns("host_identity_verified")
+        self.changePercentageToInt("host_response_rate")
+        self.changePercentageToInt("host_acceptance_rate")
+        self.changeListToLength("amenities")
+        self.changeListToLength("host_verifications")
+        self.convertResponseTime()
+        self.updateTheIntColumns(-1, "review_scores_cleanliness")
+        self.updateTheIntColumns(-1, "review_scores_checkin")
+        self.updateTheIntColumns(-1, "review_scores_communication")
+        self.updateTheIntColumns(-1, "review_scores_location")
+        self.updateTheIntColumns(-1, "review_scores_value")
+        self.updateTheIntColumns(-1, "review_scores_accuracy")
+        self.updateTheIntColumns(-1, "maximum_minimum_nights")
+        self.updateTheIntColumns(-1, "minimum_maximum_nights")
+        self.updateTheIntColumns(-1, "minimum_nights_avg_ntm")
+        self.updateTheIntColumns(-1, "maximum_nights_avg_ntm")
+
 if __name__ == '__main__':
     csvPath = "dataset/listings.csv"
     csvObj = CSVHelper(csvPath,["host_since","host_response_time","host_response_rate"
@@ -134,23 +154,5 @@ if __name__ == '__main__':
         "review_scores_cleanliness","review_scores_checkin","review_scores_communication","review_scores_location",
         "review_scores_value","review_scores_accuracy","maximum_minimum_nights","minimum_maximum_nights",
         "minimum_nights_avg_ntm","maximum_nights_avg_ntm"],"host_is_superhost")
-    csvObj.updateHostSince()
-    csvObj.updateTrueFalseColumns("host_has_profile_pic")
-    csvObj.updateTrueFalseColumns("host_identity_verified")
-    csvObj.changePercentageToInt("host_response_rate")
-    csvObj.changePercentageToInt("host_acceptance_rate")
-    csvObj.changeListToLength("amenities")
-    csvObj.changeListToLength("host_verifications")
-    csvObj.convertResponseTime()
-    csvObj.updateTheIntColumns(-1,"review_scores_cleanliness")
-    csvObj.updateTheIntColumns(-1,"review_scores_checkin")
-    csvObj.updateTheIntColumns(-1,"review_scores_communication")
-    csvObj.updateTheIntColumns(-1,"review_scores_location")
-    csvObj.updateTheIntColumns(-1,"review_scores_value")
-    csvObj.updateTheIntColumns(-1,"review_scores_accuracy")
-    csvObj.updateTheIntColumns(-1,"maximum_minimum_nights")
-    csvObj.updateTheIntColumns(-1,"minimum_maximum_nights")
-    csvObj.updateTheIntColumns(-1,"minimum_nights_avg_ntm")
-    csvObj.updateTheIntColumns(-1,"maximum_nights_avg_ntm")
     dataDictionary = csvObj.getTrainTestData(0.1)
     pass
