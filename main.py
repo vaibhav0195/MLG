@@ -1,10 +1,13 @@
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import svm
+from sklearn.ensemble import RandomForestClassifier
+
 from csvHelper import CSVHelper
+
 from models import modelTrainHelper
 import matplotlib.pyplot as plt
 
-def multibarplot(data,title,filePath=None):
+def multibarplot(data,title,filePath=None,Xlabel=""):
     """
     plot the error between the X vs Y and Z
     :param x: horizontal axis data
@@ -17,7 +20,7 @@ def multibarplot(data,title,filePath=None):
     plt.rcParams["figure.constrained_layout.use"] = True
     # for x,y,z in data:
     plt.errorbar(data[0], data[1], yerr=data[2], linewidth=3,label='Error Bar plot')
-    plt.xlabel("Number Of Neighbours")
+    plt.xlabel(Xlabel)
     plt.ylabel("F1 Score")
     plt.legend(bbox_to_anchor=(1.12, 1.1),loc='upper right')
     if filePath is None:
@@ -36,15 +39,36 @@ if __name__ == '__main__':
     csvObj = CSVHelper(datasetPath,dataColsToUse,gtCol)
     csvObj.normaliseData()
     dataDict = csvObj.getTrainTestData(0.1)
-    numNeighoursToUse = [3,5,7,10,15,100]
     trainingHelper = modelTrainHelper()
     meanTotal = []
     stdTotal = []
-    for numNeighbour in numNeighoursToUse:
-        model = KNeighborsClassifier(numNeighbour)
+
+    # numNeighoursToUse = [3,5,7,10,15,100]
+    # for numNeighbour in numNeighoursToUse:
+    #     model = KNeighborsClassifier(numNeighbour)
+    #     xTrain = dataDict['Xtrain']
+    #     yTrain = dataDict['yTrain']
+    #     mean,std = trainingHelper.getCrossValScore(model,xTrain,yTrain)
+    #     meanTotal.append(mean)
+    #     stdTotal.append(std)
+    # multibarplot([numNeighoursToUse,meanTotal,stdTotal],"Error bar plot for KNN")
+
+    # pentaltyParamsToUse = [0.01,0.1,1,10,100]
+    # for pentaltyParam in pentaltyParamsToUse:
+    #     model = svm.SVC(C=pentaltyParam)
+    #     xTrain = dataDict['Xtrain']
+    #     yTrain = dataDict['yTrain']
+    #     mean,std = trainingHelper.getCrossValScore(model,xTrain,yTrain)
+    #     meanTotal.append(mean)
+    #     stdTotal.append(std)
+    # multibarplot([pentaltyParamsToUse,meanTotal,stdTotal],"Error bar plot for KNN",Xlabel="Penalty Parameter")
+    #
+    numTrees = [5,10,50,100,1000]
+    for numTree in numTrees:
+        model = RandomForestClassifier(numTree)
         xTrain = dataDict['Xtrain']
         yTrain = dataDict['yTrain']
         mean,std = trainingHelper.getCrossValScore(model,xTrain,yTrain)
         meanTotal.append(mean)
         stdTotal.append(std)
-    multibarplot([numNeighoursToUse,meanTotal,stdTotal],"Error bar plot for KNN")
+    multibarplot([numTrees,meanTotal,stdTotal],"Error bar plot for KNN",Xlabel="Penalty Parameter")
