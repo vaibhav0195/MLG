@@ -3,13 +3,15 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 class CSVHelper:
-    def __init__(self, pathToCsv, columnNames=None, gtColmunName=None):
+    def __init__(self, pathToCsv, columnNames=None, gtColmunName=None, levelClasses=True):
         """
         load the csv
         :param pathToCsv: csv Path to load
         :param columnNames: sub column names to use
         :param gtColmunName: Groundtruth column name
+        :param levelClasses: if True get same number of datapoints for both classes.
         """
+        self._levelClasses = levelClasses
         self._dataFrame = pd.read_csv(pathToCsv)
         self.updateGtColumn(gtColmunName)
         self.updatetheDataframes(columnNames)
@@ -31,6 +33,35 @@ class CSVHelper:
         """
         self._gtColName = columnName
 
+    def balanceData(self,X,y):
+        """
+        This function is used to balance the number of classes in the data so that we get equal propotions of classes
+        :param X: Input Features
+        :param y: output features
+        :return: balanced X and y
+        """
+        # get the respective dataset
+        trueData  = np.where(y=='t')
+        falseData = np.where(y=='f')
+        trueDataPoints  = X[trueData]
+        falseDataPoints = X[falseData]
+        # get counts
+        trueCount  = np.count_nonzero(y == 't')
+        falseCount = np.count_nonzero(y == 'f')
+        # shuffle data to get some randomness
+        np.random.shuffle(falseDataPoints)
+        np.random.shuffle(trueDataPoints)
+        # remove extra data
+        if trueCount > falseCount:
+            trueDataPoints = trueDataPoints[:falseCount]
+        else:
+            falseDataPoints = trueDataPoints[:trueCount]
+        # make new gT
+        yTrue = np.asarray(['t' for _ in range(trueDataPoints.shape[0])])
+        yFalse = np.asarray(['f' for _ in range(trueDataPoints.shape[0])])
+        # return value
+        return np.concatenate((trueDataPoints, falseDataPoints), axis=0),np.concatenate((yTrue,yFalse), axis=0)
+
     def doTrainTestSplit(self,testSize=0.1):
         """
         get the train test data from the csv
@@ -44,6 +75,9 @@ class CSVHelper:
 
         assert self._gtColName is not None,"Please assign a gt column name"
         y = np.asarray(self._dataFrame[self._gtColName])
+
+        if self._levelClasses:
+            X,y = self.balanceData(X,y)
 
         Xtrain, Xtest, yTrain, yTest = train_test_split(X, y, test_size=testSize, random_state=42)
         self.dataDirectory = {"Xtrain":Xtrain,"Xtest":Xtest,"yTrain":yTrain,"yTest":yTest}
@@ -67,7 +101,6 @@ class CSVHelper:
     def updateTrueFalseColumns(self,columnName):
         dataFrame = self._dataFrame[columnName].fillna('f') # fill the nan values with False values
         trueFalseDictionary = {'t':1 ,'f':0}
-        # dataFrame.map({'t':1 ,'f':0})
         self._dataFrame[columnName] = dataFrame.apply(lambda x: trueFalseDictionary[x])
 
     def changePercentageToInt(self,columnName):
@@ -90,12 +123,17 @@ class CSVHelper:
         dataFrame = self._dataFrame['host_response_time'].fillna(" ")
         self._dataFrame["host_response_time"] = dataFrame.apply(lambda x:int(convertDict[x]))
 
+    def updateTheIntColumns(self,defaultValue,columnName):
+        dataFrame = self._dataFrame[columnName].fillna(defaultValue)
+        self._dataFrame[columnName] = dataFrame
+
 if __name__ == '__main__':
     csvPath = "dataset/listings.csv"
     csvObj = CSVHelper(csvPath,["host_since","host_response_time","host_response_rate"
         ,"host_acceptance_rate","host_verifications","host_has_profile_pic","host_identity_verified","amenities",
         "review_scores_cleanliness","review_scores_checkin","review_scores_communication","review_scores_location",
-                                "review_scores_value"],"host_is_superhost")
+        "review_scores_value","review_scores_accuracy","maximum_minimum_nights","minimum_maximum_nights",
+        "minimum_nights_avg_ntm","maximum_nights_avg_ntm"],"host_is_superhost")
     csvObj.updateHostSince()
     csvObj.updateTrueFalseColumns("host_has_profile_pic")
     csvObj.updateTrueFalseColumns("host_identity_verified")
@@ -104,5 +142,15 @@ if __name__ == '__main__':
     csvObj.changeListToLength("amenities")
     csvObj.changeListToLength("host_verifications")
     csvObj.convertResponseTime()
+    csvObj.updateTheIntColumns(-1,"review_scores_cleanliness")
+    csvObj.updateTheIntColumns(-1,"review_scores_checkin")
+    csvObj.updateTheIntColumns(-1,"review_scores_communication")
+    csvObj.updateTheIntColumns(-1,"review_scores_location")
+    csvObj.updateTheIntColumns(-1,"review_scores_value")
+    csvObj.updateTheIntColumns(-1,"review_scores_accuracy")
+    csvObj.updateTheIntColumns(-1,"maximum_minimum_nights")
+    csvObj.updateTheIntColumns(-1,"minimum_maximum_nights")
+    csvObj.updateTheIntColumns(-1,"minimum_nights_avg_ntm")
+    csvObj.updateTheIntColumns(-1,"maximum_nights_avg_ntm")
     dataDictionary = csvObj.getTrainTestData(0.1)
     pass
